@@ -38,7 +38,7 @@ function App() {
             {/* <MenuIcon /> */}
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Water Trading
+            ABC
           </Typography>
           {/* <Button color="inherit">Login</Button> */}
         </Toolbar>

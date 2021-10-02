@@ -27,7 +27,7 @@ export default function Landing() {
               history.push(`/user`);
             }}
           >
-            User
+            Consumers
           </Button>
         </div>
         <div>
@@ -38,7 +38,7 @@ export default function Landing() {
               history.push(`/admin`);
             }}
           >
-            Admin
+            Central Authority
           </Button>
         </div>
       </div>
