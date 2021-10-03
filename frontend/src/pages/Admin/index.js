@@ -48,6 +48,23 @@ export default function Admin() {
         <Marker lat={29.4817349} lng={-98.7945951} color="blue" name="Pool 2" />
 
         <Marker lat={29.8174782} lng={-95.681482} color="red" name="Pool 3" />
+
+        {/* <Polyline 
+          path={[ 
+            {lat:32.7939054, lng:-96.8728261},
+            {lat:29.4817349, lng:-98.7945951},
+          ]} 
+          options={{ 
+          strokeColor: '#00ffff',
+          strokeOpacity: 1,
+          strokeWeight: 2,
+          icons: [{ 
+            icon: "hello",
+            offset: '0',
+            repeat: '10px'
+            }],
+          }}
+        /> */}
       </GoogleMapReact>
     </div>
   );

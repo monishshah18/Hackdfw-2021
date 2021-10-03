@@ -44,14 +44,14 @@ export default function User() {
   };
 
   const handlePool = (event) => {
-    setState(event.target.value);
+    setPool(event.target.value);
   };
 
   return (
     <div style={{ textAlign: "center" }}>
       <div
         style={{
-          marginTop: "20px",
+          marginTop: "50px",
           display: "flex",
           justifyContent: "space-evenly",
           marginBottom: "60px",
@@ -84,15 +84,19 @@ export default function User() {
               label="pool"
               onChange={handlePool}
             >
-              <MenuItem value={1}>Pool 1</MenuItem>
-              <MenuItem value={2}>Pool 2</MenuItem>
-              <MenuItem value={3}>Pool 3</MenuItem>
+              <MenuItem value={1}>Dallas</MenuItem>
+              <MenuItem value={2}>San Antonio</MenuItem>
+              <MenuItem value={3}>Houston</MenuItem>
             </Select>
           </FormControl>
         </Box>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-evenly" }}>
+      <div>
+        <h1>Water trading: $25 per gallon</h1>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-evenly", marginTop: "45px" }}>
         <div
           style={{
             border: "solid 1px darkgrey",
