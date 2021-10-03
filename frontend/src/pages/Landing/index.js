@@ -9,6 +9,7 @@ import {
   Button,
   IconButton,
 } from "@material-ui/core";
+import water from "../../assets/water.png";
 
 const useStyles = makeStyles((theme) => ({}));
 
@@ -18,7 +19,10 @@ export default function Landing() {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <div style={{ textAlign: "center", marginTop: "10%" }}>
+      
+      <img src={water} alt="water"/>
+
+      <div style={{ textAlign: "center", marginTop: "10%", marginBottom: "100px" }}>
         <div style={{ marginBottom: "5%" }}>
           <Button
             variant="contained"
