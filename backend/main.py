@@ -1,14 +1,11 @@
-import os
-import datetime
 from flask import Flask
 from flask import request
-from flask import render_template, redirect, url_for
 from flask_ngrok import run_with_ngrok
+from flask import g
 import json
 # input
 # data points (gal of water per farmer per unit area) [(s1, g1), (s2,g2), (s3,g3), (s4,g4), (s5,g5), (s6,g6), (s7,g7), (s8,g8), (s9,g9)]
 # weights [(2,4), (1, 3, 5), (2, 6), (1, 5, 7), (2, 4, 6, 8), (4, 8), (7, 4, 9), (6, 8)]
-#
 
 
 def permute(nums):
@@ -224,26 +221,125 @@ def main2(data_points, weights):
 
     print("--"*20)
     print(mini, m_prm)
+    return [mini, m_prm]
+
+# input:
+# 1) pool members and their distribution - [10,20,30,40,10]
+# 2) total cap of the pool - 100
+# base price - 20
+
+# dynamic inputs
+# 1) supply or demand
+# 2) quantity
 
 
-# weights = [ list(i) for i in [(1,3), (0, 2, 4), (1, 5), (0, 4, 6), (1, 3, 5, 7), (2, 4, 8), (3, 7), (6, 4, 8), (5, 7)]]
-# data_points = [[19,1], [24,1], [17,1], [4,1], [9,1], [17,1], [10,1], [8,1], [18, 1]]
-# # main(data_points, weights)
-# main2(data_points, weights)
+demand = 0
+supply = 0
+total_cap, base = 1000, 100
+
+
+def buy(demand, supply, total_cap, base_price, demand_req):
+    # demand_req = int(input("Input the amount of water in gallon you want to buy: "))
+    if supply == 0:
+        # calculate the % of the total cap the current supply_req is
+        per_change = (demand_req/total_cap) * 100
+
+        # add the demand req to the current demand
+        demand += demand_req
+
+        # increase the base price
+        base_price = base_price + ((base_price*per_change)/100)
+    elif supply > 0:
+        # if supply is greater than 0 then initially reduce the supply to zero and then and only then you can cahnge the base price
+        if demand_req > supply:
+            # get demand to 0
+
+            demand_req = demand_req-supply
+            supply = 0
+
+            # now we have to decrease the base price
+            per_change = (demand_req/total_cap) * 100
+
+            # add the supply req to the current supply
+            demand += demand_req
+
+            # increase the base price
+            base_price = base_price + base_price*per_change
+
+        elif demand_req <= demand:
+            # no change in base price as demand is still more, just reduced the demand
+            demand = demand - demand_req
+    return demand, supply, base_price
+
+
+def sell(demand, supply, total_cap, base_price, supply_req):
+    # supply_req = int(input("Input the amount of water in gallons you want to sell: "))
+    if demand == 0:
+        # calculate the % of the total cap the current supply_req is
+        per_change = (supply_req/total_cap) * 100
+
+        # add the supply req to the supply
+        supply += supply_req
+
+        # reduce the base price
+        base_price = base_price - ((base_price*per_change)/100)
+
+    elif demand > 0:
+        # if demand is greater than 0 then initially reduce the demand to zero and then and on;y then you can cahnge the base price
+        if supply_req > demand:
+            # get demand to 0
+
+            supply_req = supply_req-demand
+            demand = 0
+
+            # now we have to decrease the base price
+            per_change = (supply_req/total_cap) * 100
+
+            # add the supply req to the current supply
+            supply += supply_req
+
+            # reduce the base price
+            base_price = base_price - ((base_price*per_change)/100)
+
+        elif supply_req <= demand:
+            # no change in base price as demand is still more, just reduced the demand
+            demand = demand - supply_req
+    return demand, supply, base_price
+
+
 app = Flask(__name__)
+demand = 0
+supply = 0
+total_cap = 1000
+base = 20
 run_with_ngrok(app)
 
 
-@app.route("/")
-def home():
-    # file = request.form['file']
-    # print('File from the POST request is: {}'.format(file))
-    return '<!doctype html><html><head><title>Equal Distribution</title></head><body><h1>Distribute</h1><form method="POST" action=""><p><input type="submit" value="Submit"></p></form></body></html>'
+@app.route('/buy_api', methods=['GET'])
+def buy_api():
+    global demand
+    global supply
+    global total_cap
+    global base
+    buyamt = int(request.args['buyamt'])
+    demand, supply, base = buy(demand, supply, total_cap, base, buyamt)
+    return json.dumps({'demand': demand, 'supply': supply, 'base': base})
 
 
-@app.route('/', methods=['POST'])
+@app.route('/sell_api', methods=['GET'])
+def sell_api():
+    global demand
+    global supply
+    global total_cap
+    global base
+    sellamt = int(request.args['sellamt'])
+    demand, supply, base = sell(demand, supply, total_cap, base, sellamt)
+    return json.dumps({'demand': demand, 'supply': supply, 'base': base})
+
+
+@app.route('/distribute', methods=['POST'])
 def distribute():
-    # Sample JSON
+    # Use form body here for both json1 and json2
     json1 = '{"0":[1,3],"1":[0,2,4],"2":[1,5],"3":[0,4,6],"4":[1,3,5,7],"5":[2,4,8],"6":[3, 7],"7":[6,4,8],"8":[5,7]}'
     json2 = '{"0":[19,1],"1":[24,1],"2":[17,1],"3":[4,1],"4":[9,1],"5":[17,1],"6":[10,1],"7":[8,1],"8":[18,1]}'
     json1_d = json.loads(json1)
@@ -251,7 +347,7 @@ def distribute():
     weights = [i for i in json1_d.values()]  # Json
     data_points = [i for i in json2_d.values()]  # Json
     Solution = main2(data_points, weights)
-    return '<!doctype html><html><head><title>Equal Distribution</title></head><body>'+'\n'.join(str(e) for e in Solution).replace("\n", "</br>")+'<h1>Distribute</h1><form method="POST" action=""><p><input type="submit" value="Submit"></p></form></body></html>'
+    return json.dumps({'Minimum': Solution[0], 'Permutation': Solution[1]})
 
 
 app.run()
