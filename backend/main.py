@@ -4,8 +4,9 @@ from flask_ngrok import run_with_ngrok
 from flask import g
 import json
 # input
-# data points (gal of water per farmer per unit area) [(s1, g1), (s2,g2), (s3,g3), (s4,g4), (s5,g5), (s6,g6), (s7,g7), (s8,g8), (s9,g9)]
-# weights [(2,4), (1, 3, 5), (2, 6), (1, 5, 7), (2, 4, 6, 8), (4, 8), (7, 4, 9), (6, 8)]
+# data points (gal of water per farmer per unit area) [(s1, g1), (s2,g2), (s3,g3), (s4,g4), (s5,g5), (s6,g6), (s7,g7), (s8,g8), (s9,g9)]]
+# weights = [ list(i) for i in [(1,3), (0, 2, 4), (1, 5), (0, 4, 6), (1, 3, 5, 7), (2, 4, 8), (3, 7), (6, 4, 8), (5, 7)]]
+# data_points = [[19,1], [24,1], [17,1], [4,1], [9,1], [17,1], [10,1], [8,1], [18, 1]]
 
 
 def permute(nums):
@@ -85,10 +86,10 @@ def main(data_points, weights):
                 que = []
                 level += 1
 
-    print(dic)
+    # print(dic)
 
     prms = permute(positive_nodes)
-    print(prms)
+    # print(prms)
 
     # now reverse the dict
 
@@ -99,24 +100,25 @@ def main(data_points, weights):
 
 def get_cost(prm, need, dic):
     cost = 0
+    get_path_cost = []
     for i in range(len(prm)):
         # get curr need
         curr = need[prm[i]]
-
+        # print(i)
         # reduce curr until it gets to zero by subtracting(here adding) the values of the need
         # so just add the
         # satisfy all the prm
         for j in dic[prm[i]]:
-            # print(j, need[j])
             if need[j] == 0:
                 continue
+            # print(j, need[j])
             tempcost = dic[prm[i]][j]
             remaining = curr + need[j]
             # print("rem", remaining)
 
             if remaining > 0:
                 # we have to add more so continue in the loop
-
+                get_path_cost.append([j, prm[i], abs(need[j])])
                 # we add the tempcost * remaining to cost
                 cost += (tempcost*remaining)
 
@@ -128,6 +130,7 @@ def get_cost(prm, need, dic):
                 # the current element succesfully finished curr
                 # update the cost
                 tc = remaining - need[j]
+                get_path_cost.append([j, prm[i], abs(tc)])
                 need[j] = remaining
                 curr = 0
                 cost += (tempcost*tc)
@@ -137,8 +140,8 @@ def get_cost(prm, need, dic):
                 # print(">>>>>")
                 break
 
-    # print(cost)
-    return cost
+    # print(get_path_cost)
+    return cost, get_path_cost
 
 
 def main2(data_points, weights):
@@ -213,15 +216,18 @@ def main2(data_points, weights):
     # get_cost(prms[0], need[:], dic)
     mini = 10**19
     m_prm = None
+    mini_path_csc = []
     for i in range(len(prms)):
-        cst = get_cost(prms[i], need[:], dic)
+        cst, path_csc = get_cost(prms[i], need[:], dic)
+        # print(path_csc)
         if mini > cst:
             mini = cst
+            mini_path_csc = path_csc
             m_prm = prms[i]
 
-    print("--"*20)
-    print(mini, m_prm)
-    return [mini, m_prm]
+    # print("--"*20)
+    # print(mini, m_prm, mini_path_csc)
+    return [mini, m_prm, mini_path_csc]
 
 # input:
 # 1) pool members and their distribution - [10,20,30,40,10]
@@ -272,41 +278,6 @@ def buy(demand, supply, total_cap, base_price, demand_req):
     return demand, supply, base_price
 
 
-def sell(demand, supply, total_cap, base_price, supply_req):
-    # supply_req = int(input("Input the amount of water in gallons you want to sell: "))
-    if demand == 0:
-        # calculate the % of the total cap the current supply_req is
-        per_change = (supply_req/total_cap) * 100
-
-        # add the supply req to the supply
-        supply += supply_req
-
-        # reduce the base price
-        base_price = base_price - ((base_price*per_change)/100)
-
-    elif demand > 0:
-        # if demand is greater than 0 then initially reduce the demand to zero and then and on;y then you can cahnge the base price
-        if supply_req > demand:
-            # get demand to 0
-
-            supply_req = supply_req-demand
-            demand = 0
-
-            # now we have to decrease the base price
-            per_change = (supply_req/total_cap) * 100
-
-            # add the supply req to the current supply
-            supply += supply_req
-
-            # reduce the base price
-            base_price = base_price - ((base_price*per_change)/100)
-
-        elif supply_req <= demand:
-            # no change in base price as demand is still more, just reduced the demand
-            demand = demand - supply_req
-    return demand, supply, base_price
-
-
 app = Flask(__name__)
 demand = 0
 supply = 0
@@ -347,7 +318,7 @@ def distribute():
     weights = [i for i in json1_d.values()]  # Json
     data_points = [i for i in json2_d.values()]  # Json
     Solution = main2(data_points, weights)
-    return json.dumps({'Minimum': Solution[0], 'Permutation': Solution[1]})
+    return json.dumps({'Total Transportation Cost': Solution[0], 'Permutation': Solution[1], 'Transfer between Nodes': Solution[2]})
 
 
 app.run()
